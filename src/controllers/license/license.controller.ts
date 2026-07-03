@@ -118,6 +118,19 @@ export class LicenseController {
     }
   }
 
+  async summary(req: Request, res: Response<ResponseApi<Awaited<ReturnType<LicenseService['getSummary']>>>>) {
+    try {
+      const data = await this.licenseService.getSummary();
+      res.status(HttpStatusCode.Ok).json({
+        message: 'License summary retrieved successfully',
+        statusCode: HttpStatusCode.Ok,
+        data,
+      });
+    } catch (error) {
+      ProcessError(error, res);
+    }
+  }
+
   async index(req: Request, res: Response<ResponseApiWithPagination<LicenseAttributes>>) {
     try {
       let { page, per_page, pks, status } = req.query;

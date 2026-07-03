@@ -6,9 +6,50 @@ import MasterVendorApplication from '@database/models/masters/master_vendor_appl
 import { NotFoundException } from '@helper/Error/NotFound/NotFoundException';
 import { stringToDate } from '@helper/function/common';
 import { DateTime } from 'luxon';
+import { Op } from 'sequelize';
+
+export interface LicenseSummary {
+  total: number;
+  under3Months: number;
+  under1Month: number;
+  statusDistribution: {
+    green: number;
+    yellow: number;
+    red: number;
+  };
+}
 
 export default class LicenseService {
   constructor() {}
+
+  async getSummary(): Promise<LicenseSummary> {
+    const now = DateTime.now();
+    const in30Days = now.plus({ days: 30 }).toJSDate();
+    const in90Days = now.plus({ days: 90 }).toJSDate();
+
+    const [total, under3Months, under1Month] = await Promise.all([
+      License.count(),
+      // selaras dengan filter index: under_3_months => dueDateLicense <= now+90
+      License.count({ where: { dueDateLicense: { [Op.lte]: in90Days } } }),
+      // under_1_month => dueDateLicense <= now+30
+      License.count({ where: { dueDateLicense: { [Op.lte]: in30Days } } }),
+    ]);
+
+    // Distribusi status mengikuti license.resource.ts:
+    // red   = dueDate < now+30 (mencakup yang sudah lewat)
+    // yellow= now+30 <= dueDate < now+90
+    // green = dueDate >= now+90
+    const red = under1Month;
+    const yellow = under3Months - under1Month;
+    const green = total - under3Months;
+
+    return {
+      total,
+      under3Months,
+      under1Month,
+      statusDistribution: { green, yellow, red },
+    };
+  }
 
   async getById(id: number): Promise<License> {
     const license = await License.findByPk(id, {
