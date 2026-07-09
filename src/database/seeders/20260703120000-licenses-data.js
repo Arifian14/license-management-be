@@ -4,9 +4,13 @@ const mergeSeed = require('./utils/mergeSeed');
 
 // Data contoh License. Due date dibuat bervariasi relatif terhadap awal Juli 2026
 // supaya kartu dashboard menampilkan distribusi status hijau/kuning/merah.
-//   merah  (< 30 hari / expired) : id 1, 2
-//   kuning (30-90 hari)          : id 3, 4
-//   hijau  (>= 90 hari)          : id 5, 6
+//   merah  (< 30 hari / expired) : id 1, 2, 8, 9, 10
+//   kuning (30-90 hari)          : id 3, 4, 11, 12, 13, 14
+//   hijau  (>= 90 hari)          : id 5, 6, 15, 16, 17, 18, 19, 20
+// Total dummy = 20 PKS (id 8-20 ditambahkan pada iterasi berikutnya). Nama
+// aplikasi sengaja dicampur: sebagian mengulang aplikasi lama (WISE/BCS/FCOS/
+// MCS/NOS Cicil Emas/APPEL IKURMA) dan sebagian baru, agar hitungan "aplikasi
+// unik" pada dashboard tetap bermakna.
 module.exports = {
   async up(queryInterface, Sequelize) {
     const licenses = [
@@ -16,6 +20,23 @@ module.exports = {
       { id: 4, pks: 'PKS-LIC-004/2026', application: 'MCS',           vendor_id: 1, date_started: '2024-09-15 00:00:00', due_date_license: '2026-09-15 00:00:00', descriptions: 'Lisensi MCS (habis 1-3 bulan)',         file_pks: 'https://drive.example.com/pks/mcs.pdf',     file_bast: 'https://drive.example.com/bast/mcs.pdf',     is_notified: 1 },
       { id: 5, pks: 'PKS-LIC-005/2026', application: 'NOS Cicil Emas', vendor_id: 2, date_started: '2024-12-10 00:00:00', due_date_license: '2026-12-10 00:00:00', descriptions: 'Lisensi NOS Cicil Emas (aman)',        file_pks: 'https://drive.example.com/pks/nos-ce.pdf',  file_bast: 'https://drive.example.com/bast/nos-ce.pdf',  is_notified: 1 },
       { id: 6, pks: 'PKS-LIC-006/2026', application: 'APPEL IKURMA',  vendor_id: 3, date_started: '2025-02-01 00:00:00', due_date_license: '2027-02-01 00:00:00', descriptions: 'Lisensi APPEL IKURMA (aman)',          file_pks: 'https://drive.example.com/pks/ikurma.pdf',  file_bast: 'https://drive.example.com/bast/ikurma.pdf',  is_notified: 1 },
+      // --- Tambahan agar total 20 PKS ---
+      // merah (< 30 hari / expired)
+      { id: 8,  pks: 'PKS-LIC-008/2026', application: 'WISE',              vendor_id: 2, date_started: '2024-07-20 00:00:00', due_date_license: '2026-07-20 00:00:00', descriptions: 'Lisensi WISE unit lain (segera habis < 1 bulan)', file_pks: 'https://drive.example.com/pks/wise-2.pdf',   file_bast: 'https://drive.example.com/bast/wise-2.pdf',   is_notified: 1 },
+      { id: 9,  pks: 'PKS-LIC-009/2026', application: 'SLIK',              vendor_id: 1, date_started: '2024-06-28 00:00:00', due_date_license: '2026-06-28 00:00:00', descriptions: 'Lisensi SLIK (sudah jatuh tempo)',             file_pks: 'https://drive.example.com/pks/slik.pdf',    file_bast: 'https://drive.example.com/bast/slik.pdf',    is_notified: 1 },
+      { id: 10, pks: 'PKS-LIC-010/2026', application: 'CRM Syariah',       vendor_id: 3, date_started: '2024-08-01 00:00:00', due_date_license: '2026-08-01 00:00:00', descriptions: 'Lisensi CRM Syariah (segera habis < 1 bulan)',  file_pks: 'https://drive.example.com/pks/crm.pdf',     file_bast: 'https://drive.example.com/bast/crm.pdf',     is_notified: 1 },
+      // kuning (30-90 hari)
+      { id: 11, pks: 'PKS-LIC-011/2026', application: 'BCS',               vendor_id: 1, date_started: '2024-08-28 00:00:00', due_date_license: '2026-08-28 00:00:00', descriptions: 'Lisensi BCS unit lain (habis 1-3 bulan)',       file_pks: 'https://drive.example.com/pks/bcs-2.pdf',   file_bast: 'https://drive.example.com/bast/bcs-2.pdf',   is_notified: 1 },
+      { id: 12, pks: 'PKS-LIC-012/2026', application: 'e-Form',            vendor_id: 2, date_started: '2024-09-12 00:00:00', due_date_license: '2026-09-12 00:00:00', descriptions: 'Lisensi e-Form (habis 1-3 bulan)',             file_pks: 'https://drive.example.com/pks/eform.pdf',   file_bast: 'https://drive.example.com/bast/eform.pdf',   is_notified: 1 },
+      { id: 13, pks: 'PKS-LIC-013/2026', application: 'FCOS',              vendor_id: 3, date_started: '2024-09-28 00:00:00', due_date_license: '2026-09-28 00:00:00', descriptions: 'Lisensi FCOS unit lain (habis 1-3 bulan)',      file_pks: 'https://drive.example.com/pks/fcos-2.pdf',  file_bast: 'https://drive.example.com/bast/fcos-2.pdf',  is_notified: 1 },
+      { id: 14, pks: 'PKS-LIC-014/2026', application: 'Digital Signature', vendor_id: 1, date_started: '2024-10-03 00:00:00', due_date_license: '2026-10-03 00:00:00', descriptions: 'Lisensi Digital Signature (habis 1-3 bulan)',   file_pks: 'https://drive.example.com/pks/dsign.pdf',   file_bast: 'https://drive.example.com/bast/dsign.pdf',   is_notified: 1 },
+      // hijau (>= 90 hari)
+      { id: 15, pks: 'PKS-LIC-015/2026', application: 'NOS Cicil Emas',    vendor_id: 2, date_started: '2024-11-25 00:00:00', due_date_license: '2026-11-25 00:00:00', descriptions: 'Lisensi NOS Cicil Emas unit lain (aman)',       file_pks: 'https://drive.example.com/pks/nos-ce-2.pdf', file_bast: 'https://drive.example.com/bast/nos-ce-2.pdf', is_notified: 1 },
+      { id: 16, pks: 'PKS-LIC-016/2027', application: 'Payment Gateway',   vendor_id: 3, date_started: '2025-01-20 00:00:00', due_date_license: '2027-01-20 00:00:00', descriptions: 'Lisensi Payment Gateway (aman)',              file_pks: 'https://drive.example.com/pks/paygw.pdf',   file_bast: 'https://drive.example.com/bast/paygw.pdf',   is_notified: 1 },
+      { id: 17, pks: 'PKS-LIC-017/2027', application: 'MCS',               vendor_id: 1, date_started: '2025-03-15 00:00:00', due_date_license: '2027-03-15 00:00:00', descriptions: 'Lisensi MCS unit lain (aman)',                 file_pks: 'https://drive.example.com/pks/mcs-2.pdf',   file_bast: 'https://drive.example.com/bast/mcs-2.pdf',   is_notified: 1 },
+      { id: 18, pks: 'PKS-LIC-018/2027', application: 'Loan Origination',  vendor_id: 2, date_started: '2025-05-05 00:00:00', due_date_license: '2027-05-05 00:00:00', descriptions: 'Lisensi Loan Origination (aman)',             file_pks: 'https://drive.example.com/pks/los.pdf',     file_bast: 'https://drive.example.com/bast/los.pdf',     is_notified: 1 },
+      { id: 19, pks: 'PKS-LIC-019/2027', application: 'Core Banking',      vendor_id: 3, date_started: '2025-06-25 00:00:00', due_date_license: '2027-06-25 00:00:00', descriptions: 'Lisensi Core Banking (aman)',                 file_pks: 'https://drive.example.com/pks/corebank.pdf', file_bast: 'https://drive.example.com/bast/corebank.pdf', is_notified: 1 },
+      { id: 20, pks: 'PKS-LIC-020/2027', application: 'APPEL IKURMA',      vendor_id: 1, date_started: '2025-08-10 00:00:00', due_date_license: '2027-08-10 00:00:00', descriptions: 'Lisensi APPEL IKURMA unit lain (aman)',        file_pks: 'https://drive.example.com/pks/ikurma-2.pdf', file_bast: 'https://drive.example.com/bast/ikurma-2.pdf', is_notified: 1 },
     ];
     await mergeSeed(queryInterface, 'licenses', licenses, 'id');
 
@@ -30,6 +51,6 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     await queryInterface.bulkDelete('license_healthchecks', { id: { [Sequelize.Op.in]: [1, 2, 3, 4] } });
-    await queryInterface.bulkDelete('licenses', { id: { [Sequelize.Op.in]: [1, 2, 3, 4, 5, 6] } });
+    await queryInterface.bulkDelete('licenses', { id: { [Sequelize.Op.in]: [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] } });
   },
 };

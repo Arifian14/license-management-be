@@ -9,6 +9,7 @@ import { DateTime } from 'luxon';
 import { Op } from 'sequelize';
 
 export interface LicenseSummary {
+  // Hitungan berdasar baris License/PKS
   total: number;
   under3Months: number;
   under1Month: number;
@@ -16,6 +17,12 @@ export interface LicenseSummary {
     green: number;
     yellow: number;
     red: number;
+  };
+  // Hitungan berdasar nama aplikasi UNIK (kolom `application`); nama sama dihitung satu
+  applications: {
+    total: number;
+    under3Months: number;
+    under1Month: number;
   };
 }
 
@@ -27,12 +34,16 @@ export default class LicenseService {
     const in30Days = now.plus({ days: 30 }).toJSDate();
     const in90Days = now.plus({ days: 90 }).toJSDate();
 
-    const [total, under3Months, under1Month] = await Promise.all([
+    const [total, under3Months, under1Month, appTotal, appUnder3Months, appUnder1Month] = await Promise.all([
       License.count(),
       // selaras dengan filter index: under_3_months => dueDateLicense <= now+90
       License.count({ where: { dueDateLicense: { [Op.lte]: in90Days } } }),
       // under_1_month => dueDateLicense <= now+30
       License.count({ where: { dueDateLicense: { [Op.lte]: in30Days } } }),
+      // aplikasi UNIK (nama sama dihitung satu)
+      License.count({ distinct: true, col: 'application' }),
+      License.count({ distinct: true, col: 'application', where: { dueDateLicense: { [Op.lte]: in90Days } } }),
+      License.count({ distinct: true, col: 'application', where: { dueDateLicense: { [Op.lte]: in30Days } } }),
     ]);
 
     // Distribusi status mengikuti license.resource.ts:
@@ -48,6 +59,11 @@ export default class LicenseService {
       under3Months,
       under1Month,
       statusDistribution: { green, yellow, red },
+      applications: {
+        total: appTotal,
+        under3Months: appUnder3Months,
+        under1Month: appUnder1Month,
+      },
     };
   }
 
