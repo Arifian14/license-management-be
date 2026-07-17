@@ -1,12 +1,13 @@
 import bcrypt from 'bcryptjs';
 import { LoginDto } from '@common/dto/auth/login.dto';
-import Users from '@database/models/user.model';
+import Users, { UserAttributes } from '@database/models/user.model';
 import { NotFoundException } from '@helper/Error/NotFound/NotFoundException';
 
 import { CreateUserDto } from '@common/dto/user/CreateUser.dto';
 
 import { BadRequestException } from '@helper/Error/BadRequestException/BadRequestException';
 import JWTService from '@service/jwt/jwt.service';
+import { UpdateUserDto } from '@common/dto/user/UpdateUser.dto';
 
 export default class UserService {
   private jwtService: JWTService;
@@ -54,5 +55,30 @@ export default class UserService {
     };
 
     return result;
+  }
+
+  async update(id: number, data: UpdateUserDto) {
+    const user = await Users.findByPk(id);
+    if (!user) throw new NotFoundException('Users not found', {});
+
+    const payload: Partial<UserAttributes> = {
+      name: data.name,
+      email: data.email,
+      role: data.role,
+    };
+    // hanya hash & ganti password kalau diisi
+    if (data.password) {
+      payload.password = await bcrypt.hash(data.password, 10);
+    }
+
+    await user.update(payload);
+    return user;
+  }
+
+  async delete(id: number): Promise<null> {
+    const user = await Users.findByPk(id);
+    if (!user) throw new NotFoundException('Users not found', {});
+    await user.destroy();
+    return null;
   }
 }

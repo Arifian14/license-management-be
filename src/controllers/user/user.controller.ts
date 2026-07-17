@@ -42,6 +42,39 @@ export class UserController {
     }
   }
 
+  async show(req: Request, res: Response<IResponse<UserAttributes>>) {
+    try {
+      const result = await this.userServices.getById(parseInt(req.params.id, 10));
+      res.status(200).json({
+        message: messages.SUCCESS,
+        statusCode: HttpStatusCode.Ok,
+        data: result,
+      });
+    } catch (err) { ProcessError(err, res); }
+  }
+
+  async update(req: Request, res: Response<IResponse<UserAttributes>>) {
+    try {
+      const result = await this.userServices.update(parseInt(req.params.id, 10), req.body);
+      res.status(200).json({
+        message: messages.SUCCESS,
+        statusCode: HttpStatusCode.Ok,
+        data: result,
+      });
+    } catch (err) { ProcessError(err, res); }
+  }
+
+  async destroy(req: Request, res: Response<IResponse<null>>) {
+    try {
+      await this.userServices.delete(parseInt(req.params.id, 10));
+      res.status(204).json({
+        message: messages.SUCCESS,
+        statusCode: HttpStatusCode.NoContent,
+        data: null,
+      });
+    } catch (err) { ProcessError(err, res); }
+  }
+
   async signIn(req: Request, res: Response<IResponse<any>>) {
     try {
       const result = await this.userServices.signIn(req.body);

@@ -21,6 +21,7 @@ export default class LicenseRoute {
       )
       .get((req, res) => this.licenseController.index(req, res));
     this.router.route('/summary').get((req, res) => this.licenseController.summary(req, res));
+    this.router.route('/applications').get((req, res) => this.licenseController.applications(req, res));
     this.router
       .route('/:id')
       .get((req, res) => this.licenseController.show(req, res))

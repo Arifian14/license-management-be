@@ -12,7 +12,7 @@ import { LicenseHealcheckService } from '@service/license/licenseHealtheck.servi
 import { HttpStatusCode } from 'axios';
 import { Request, Response } from 'express';
 import { DateTime } from 'luxon';
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 
 export class LicenseController {
   private licenseService: LicenseService;
@@ -131,49 +131,106 @@ export class LicenseController {
     }
   }
 
+  async applications(req: Request, res: Response) {
+    try {
+      const { page, per_page, status, application } = req.query;
+
+      const result = await this.licenseService.getApplicationList({
+        status: (status as string) ?? 'all',
+        page: parseInt((page as string) ?? '1', 10),
+        perPage: parseInt((per_page as string) ?? '10', 10),
+        search: (application as string) ?? '',
+      });
+
+      res.status(HttpStatusCode.Ok).json({
+        message: 'OK',
+        statusCode: HttpStatusCode.Ok,
+        data: result.data,
+        meta: {
+          currentPage: result.currentPage,
+          pageSize: result.pageSize,
+          totalCount: result.totalCount,
+          totalPages: result.totalPages,
+        },
+      });
+    } catch (error) {
+      ProcessError(error, res);
+    }
+  }
+
   async index(req: Request, res: Response<ResponseApiWithPagination<LicenseAttributes>>) {
     try {
-      let { page, per_page, pks, status } = req.query;
+      let { page, per_page, pks, status, application } = req.query;
 
       if (!status) {
         status = 'all';
       }
 
-      let dueDateThreshold: number | undefined;
+      // Ambang tanggal jatuh tempo relatif terhadap hari ini
+      const now = DateTime.now();
+      const d30 = now.plus({ days: 30 }).toISODate(); // batas 1 bulan
+      const d90 = now.plus({ days: 90 }).toISODate(); // batas 3 bulan
 
+      // Kondisi jatuh tempo per jenis filter:
+      //   under_1_month      => <= +30 hari (kumulatif, termasuk expired)
+      //   under_3_months     => <= +90 hari (kumulatif)
+      //   between_1_3_months => > +30 hari DAN <= +90 hari (pita "sedang", presisi non-kumulatif)
+      //   all/lainnya        => tanpa filter tanggal
+      let dueDateCondition: Record<symbol, string | null> | undefined;
       switch (status) {
-        case 'under_3_months':
-          dueDateThreshold = 90;
-          break;
         case 'under_1_month':
-          dueDateThreshold = 30;
+          dueDateCondition = { [Op.lte]: d30 };
+          break;
+        case 'under_3_months':
+          dueDateCondition = { [Op.lte]: d90 };
+          break;
+        case 'between_1_3_months':
+          dueDateCondition = { [Op.gt]: d30, [Op.lte]: d90 };
+          break;
+        case 'above_3_months':
+          dueDateCondition = { [Op.gt]: d90 };
           break;
         default:
-          dueDateThreshold = 0;
+          dueDateCondition = undefined;
       }
-      let thresholdDate: string | null = null;
-      if (dueDateThreshold !== 0) {
-        const today = DateTime.now();
-        thresholdDate = today.plus({ days: dueDateThreshold }).toISODate();
-      }
+
+      const keywoard = (pks as string) ?? '';
+      const searchOr: WhereOptions | undefined = keywoard
+        ? {
+            [Op.or]: [
+              { pks: { [Op.like]: `%${keywoard}%` } },
+              { application: { [Op.like]: `%${keywoard}%` } },
+            ],
+          }
+        : undefined;
+
+      const symbolCondition: WhereOptions | undefined =
+        dueDateCondition || searchOr
+          ? {
+              ...(dueDateCondition ? { dueDateLicense: dueDateCondition } : {}),
+              ...(searchOr ?? {}),
+            }
+          : undefined;
 
       const licenses = await this.licenseService.getAll({
         perPage: parseInt((per_page as string) ?? '10', 10),
         page: parseInt((page as string) ?? '1', 10),
         searchConditions: [
           {
-            keyValue: `%${(pks as string) ?? ''}%`,
-            operator: Op.like,
-            keyColumn: 'pks',
-            keySearch: 'pks',
+            keyValue: (application as string) ?? '',
+            operator: Op.eq,
+            keyColumn: 'application',
+            keySearch: 'application',
           },
+          // Filter aplikasi (exact) untuk mode "Detail PKS"; keyValue kosong diabaikan.
           {
-            keyValue: thresholdDate ?? '',
-            operator: Op.lte,
-            keyColumn: 'dueDateLicense',
-            keySearch: 'dueDateLicense',
+            keyValue: (application as string) ?? '',
+            operator: Op.eq,
+            keyColumn: 'application',
+            keySearch: 'application',
           },
         ],
+        symbolCondition,
       });
 
       res.status(HttpStatusCode.Ok).json({
